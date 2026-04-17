@@ -33,7 +33,18 @@
         .score-title-board {
             color: #fff;
             font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .high-score-board {
+            color: #fff;
+            font-size: 16px;
             margin-bottom: 10px;
+        }
+        
+        .player-name {
+            color: #00aaff;
+            font-weight: bold;
         }
         
         .score {
@@ -43,6 +54,16 @@
         
         .title {
             color: #ff8800;
+            font-weight: bold;
+        }
+        
+        .high-score {
+            color: #ff4444;
+            font-weight: bold;
+        }
+        
+        .high-title {
+            color: #ffaa00;
             font-weight: bold;
         }
         
@@ -183,8 +204,11 @@
     <div class="game-container">
         <h1>🍊 橘子大王</h1>
         <div class="score-title-board">
-            分数: <span class="score" id="score">0</span> | 称号: <span class="title" id="title">学渣</span>
-        </div>ss
+            玩家: <span class="player-name" id="playerName">游客</span> | 分数: <span class="score" id="score">0</span> | 称号: <span class="title" id="title">学渣</span>
+        </div>
+        <div class="high-score-board">
+            最高分: <span class="high-score" id="highScore">0</span> | 最高称号: <span class="high-title" id="highTitle">学渣</span>
+        </div>
         <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="600" height="600"></canvas>
             <div class="game-over" id="gameOver">
@@ -209,8 +233,11 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const playerNameElement = document.getElementById('playerName');
         const scoreElement = document.getElementById('score');
         const titleElement = document.getElementById('title');
+        const highScoreElement = document.getElementById('highScore');
+        const highTitleElement = document.getElementById('highTitle');
         const gameOverElement = document.getElementById('gameOver');
         const finalScoreElement = document.getElementById('finalScore');
         const startButton = document.getElementById('startButton');
@@ -233,8 +260,27 @@
         let gameSpeed = 300; // 速度改为原来的三分之一
         let isGameRunning = false;
         let isPaused = false;
+        let playerName = localStorage.getItem('snakePlayerName') || '';
+        let highScore = parseInt(localStorage.getItem('snakeHighScore')) || 0;
+        let highTitle = localStorage.getItem('snakeHighTitle') || '学渣';
         let headImage = new Image();
         headImage.src = 'king.png';
+        
+        // 初始化游戏数据
+        function initGameData() {
+            // 检查玩家名称
+            if (playerName) {
+                playerNameElement.textContent = playerName;
+            }
+            // 显示最高分和最高称号
+            highScoreElement.textContent = highScore;
+            highTitleElement.textContent = highTitle;
+        }
+        
+        // 页面加载完成后初始化
+        window.onload = function() {
+            initGameData();
+        };
         
         // 游戏卡图片数组
         const gameCardImages = [
@@ -645,15 +691,51 @@
                 clearTimeout(specialFoodSpawnTimer);
                 specialFoodSpawnTimer = null;
             }
+            
+            // 更新最高分和最高称号
+            if (score > highScore) {
+                highScore = score;
+                highTitle = titleElement.textContent;
+                localStorage.setItem('snakeHighScore', highScore);
+                localStorage.setItem('snakeHighTitle', highTitle);
+                highScoreElement.textContent = highScore;
+                highTitleElement.textContent = highTitle;
+            }
+            
+            // 更新游戏结束界面
             finalScoreElement.textContent = score;
+            // 修改游戏结束提示，显示玩家名称和称号
+            gameOverElement.innerHTML = `
+                <h2>游戏结束!</h2>
+                <p>${playerName}是${titleElement.textContent}</p>
+                <p>最终得分: <span id="finalScore">${score}</span></p>
+                <button class="btn" onclick="restartGame()">重新开始</button>
+            `;
             gameOverElement.style.display = 'block';
             // 不显示开始按钮，只显示游戏结束界面中的重新开始按钮
             playGameOverSound(); // 播放游戏结束音效
         }
 
+        // 检查并设置玩家名称
+        function checkPlayerName() {
+            if (!playerName) {
+                let name = prompt('请输入你的昵称:', '');
+                if (name && name.trim() !== '') {
+                    playerName = name.trim();
+                    localStorage.setItem('snakePlayerName', playerName);
+                } else {
+                    playerName = '游客';
+                }
+                playerNameElement.textContent = playerName;
+            }
+        }
+        
         // 开始游戏
         function startGame() {
             if (isGameRunning) return;
+            
+            // 检查玩家名称
+            checkPlayerName();
             
             init();
             isGameRunning = true;
