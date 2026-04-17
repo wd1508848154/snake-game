@@ -30,13 +30,7 @@
             text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
         
-        .score-board {
-            color: #fff;
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-        
-        .title-board {
+        .score-title-board {
             color: #fff;
             font-size: 20px;
             margin-bottom: 10px;
@@ -174,23 +168,32 @@
             position: relative;
             display: inline-block;
         }
+        
+        .start-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: block;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>🍊 橘子大王</h1>
-        <div class="score-board">
-            得分: <span class="score" id="score">0</span>
-        </div>
-        <div class="title-board">
-            称号: <span class="title" id="title">学渣</span>
+        <div class="score-title-board">
+            分数: <span class="score" id="score">0</span> | 称号: <span class="title" id="title">学渣</span>
         </div>
         <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="400" height="400"></canvas>
+            <canvas id="gameCanvas" width="500" height="500"></canvas>
             <div class="game-over" id="gameOver">
                 <h2>游戏结束!</h2>
                 <p>最终得分: <span id="finalScore">0</span></p>
                 <button class="btn" onclick="restartGame()">重新开始</button>
+            </div>
+            <div class="start-button" id="startButton">
+                <button class="btn" onclick="startGame()">开始游戏</button>
             </div>
         </div>
         <div class="mobile-controls">
@@ -201,7 +204,6 @@
                 <button class="d-btn down" ontouchstart="handleMobileControl('down')" onclick="handleMobileControl('down')">↓</button>
             </div>
         </div>
-        <button class="btn" onclick="startGame()">开始游戏</button>
     </div>
 
     <script>
@@ -211,15 +213,18 @@
         const titleElement = document.getElementById('title');
         const gameOverElement = document.getElementById('gameOver');
         const finalScoreElement = document.getElementById('finalScore');
+        const startButton = document.getElementById('startButton');
 
         // 游戏配置
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
 
         let snake = [];
-        let food = {};
+        let food = null; // 普通食物
+        let foodSpawnTimer = null; // 普通食物生成定时器
+        let foodDuration = 10000; // 普通食物持续时间（10秒）
         let specialFood = null; // 特殊食物（游戏卡）
-        let specialFoodDuration = 5000; // 特殊食物持续时间（毫秒）
+        let specialFoodDuration = Math.floor(Math.random() * 3000) + 5000; // 特殊食物持续时间（5-8秒随机）
         let specialFoodSpawnTimer = null; // 特殊食物生成定时器
         let direction = { x: 0, y: 0 };
         let nextDirection = { x: 0, y: 0 };
@@ -357,7 +362,8 @@
             scoreElement.textContent = score;
             gameSpeed = 300; // 速度改为原来的三分之一
             isPaused = false;
-            spawnFood();
+            food = null; // 初始化普通食物
+            specialFood = null; // 初始化特殊食物
             updateTitle(); // 初始化称号
         }
 
@@ -366,7 +372,8 @@
             food = {
                 x: Math.floor(Math.random() * tileCount),
                 y: Math.floor(Math.random() * tileCount),
-                course: courses[Math.floor(Math.random() * courses.length)]
+                course: courses[Math.floor(Math.random() * courses.length)],
+                spawnTime: Date.now()
             };
             
             // 确保食物不在蛇身上
@@ -375,6 +382,12 @@
                     spawnFood();
                     return;
                 }
+            }
+            
+            // 确保食物不在特殊食物位置
+            if (specialFood && specialFood.x === food.x && specialFood.y === food.y) {
+                spawnFood();
+                return;
             }
         }
         
@@ -397,6 +410,9 @@
                 spawnSpecialFood();
                 return;
             }
+            
+            // 随机特殊食物持续时间（5-8秒）
+            specialFoodDuration = Math.floor(Math.random() * 3000) + 5000;
             
             // 生成特殊食物
             specialFood = {
@@ -455,30 +471,32 @@
             });
 
             // 绘制食物
-            ctx.fillStyle = '#ff4444';
-            ctx.shadowColor = '#ff4444';
-            ctx.shadowBlur = 15;
-            ctx.beginPath();
-            ctx.arc(
-                food.x * gridSize + gridSize / 2,
-                food.y * gridSize + gridSize / 2,
-                gridSize / 2 - 2,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            
-            // 绘制课程名称
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(
-                food.course,
-                food.x * gridSize + gridSize / 2,
-                food.y * gridSize + gridSize / 2
-            );
+            if (food) {
+                ctx.fillStyle = '#ff4444';
+                ctx.shadowColor = '#ff4444';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(
+                    food.x * gridSize + gridSize / 2,
+                    food.y * gridSize + gridSize / 2,
+                    gridSize / 2 - 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // 绘制课程名称
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(
+                    food.course,
+                    food.x * gridSize + gridSize / 2,
+                    food.y * gridSize + gridSize / 2
+                );
+            }
             
             // 绘制特殊食物（游戏卡）
             if (specialFood) {
@@ -486,36 +504,45 @@
                 const elapsedTime = Date.now() - specialFood.spawnTime;
                 const remainingTime = Math.max(0, Math.ceil((specialFoodDuration - elapsedTime) / 1000));
                 
-                // 绘制游戏卡图片
-                const img = gameCardImageObjects[specialFood.imageIndex];
-                ctx.drawImage(
-                    img,
+                // 绘制背景
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fillRect(
                     specialFood.x * gridSize,
                     specialFood.y * gridSize,
                     gridSize,
                     gridSize
                 );
                 
-                // 绘制分数
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '8px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillText(
-                    '+' + specialFood.value,
-                    specialFood.x * gridSize + gridSize / 2,
-                    specialFood.y * gridSize + 2
+                // 绘制游戏卡图片
+                const img = gameCardImageObjects[specialFood.imageIndex];
+                ctx.drawImage(
+                    img,
+                    specialFood.x * gridSize + 2,
+                    specialFood.y * gridSize + 2,
+                    gridSize - 4,
+                    gridSize - 4
                 );
                 
-                // 绘制倒计时
-                ctx.fillStyle = '#ff0000';
+                // 绘制分数（向上超出）
+                ctx.fillStyle = '#00ff88';
                 ctx.font = '10px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
                 ctx.fillText(
+                    '+' + specialFood.value,
+                    specialFood.x * gridSize + gridSize / 2,
+                    specialFood.y * gridSize - 2
+                );
+                
+                // 绘制倒计时（向下超出）
+                ctx.fillStyle = '#ff0000';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(
                     remainingTime + 's',
                     specialFood.x * gridSize + gridSize / 2,
-                    specialFood.y * gridSize + gridSize - 2
+                    specialFood.y * gridSize + gridSize + 2
                 );
             }
 
@@ -563,7 +590,7 @@
             snake.unshift(head);
 
             // 吃普通食物检测
-            if (head.x === food.x && head.y === food.y) {
+            if (food && head.x === food.x && head.y === food.y) {
                 score += 10;
                 scoreElement.textContent = score;
                 spawnFood();
@@ -579,6 +606,14 @@
                 specialFood = null; // 清除特殊食物
             } else {
                 snake.pop();
+            }
+            
+            // 普通食物消失逻辑
+            if (food) {
+                const elapsedTime = Date.now() - food.spawnTime;
+                if (elapsedTime >= foodDuration) {
+                    food = null;
+                }
             }
             
             // 特殊食物消失逻辑
@@ -600,6 +635,11 @@
         function gameOver() {
             isGameRunning = false;
             clearInterval(gameLoop);
+            // 清除普通食物生成定时器
+            if (foodSpawnTimer) {
+                clearTimeout(foodSpawnTimer);
+                foodSpawnTimer = null;
+            }
             // 清除特殊食物生成定时器
             if (specialFoodSpawnTimer) {
                 clearTimeout(specialFoodSpawnTimer);
@@ -607,6 +647,7 @@
             }
             finalScoreElement.textContent = score;
             gameOverElement.style.display = 'block';
+            startButton.style.display = 'block'; // 显示开始按钮
             playGameOverSound(); // 播放游戏结束音效
         }
 
@@ -617,6 +658,7 @@
             init();
             isGameRunning = true;
             gameOverElement.style.display = 'none';
+            startButton.style.display = 'none'; // 隐藏开始按钮
             
             // 设置初始方向为向右
             nextDirection = { x: 1, y: 0 };
@@ -624,8 +666,28 @@
             gameLoop = setInterval(gameStep, gameSpeed);
             playBackgroundMusic(); // 播放背景音乐
             
+            // 启动普通食物生成定时器
+            startFoodSpawnTimer();
             // 启动特殊食物生成定时器
             startSpecialFoodSpawnTimer();
+        }
+        
+        // 启动普通食物生成定时器
+        function startFoodSpawnTimer() {
+            if (foodSpawnTimer) {
+                clearTimeout(foodSpawnTimer);
+            }
+            
+            // 3-6秒随机生成普通食物
+            const randomTime = Math.floor(Math.random() * 3000) + 3000; // 3000-6000毫秒
+            
+            foodSpawnTimer = setTimeout(() => {
+                if (isGameRunning && !food) {
+                    spawnFood();
+                }
+                // 递归调用，继续生成
+                startFoodSpawnTimer();
+            }, randomTime);
         }
         
         // 启动特殊食物生成定时器
