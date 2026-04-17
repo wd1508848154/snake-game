@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>贪吃蛇游戏</title>
+    <title>橘子大王</title>
     <style>
         * {
             margin: 0;
@@ -60,30 +60,31 @@
         
         /* 移动端控制按钮 */
         .mobile-controls {
-            display: none;
+            display: block;
             margin-top: 20px;
         }
         
         .d-pad {
             display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 5px;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 10px;
             justify-content: center;
         }
         
         .d-btn {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             border: none;
-            border-radius: 10px;
-            background: rgba(0, 255, 136, 0.2);
+            border-radius: 15px;
+            background: rgba(0, 255, 136, 0.3);
             color: #00ff88;
-            font-size: 24px;
+            font-size: 30px;
             cursor: pointer;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             transition: all 0.1s;
+            box-shadow: 0 4px 8px rgba(0, 255, 136, 0.2);
         }
         
         .d-btn:active {
@@ -99,8 +100,8 @@
         /* 响应式设计 */
         @media (max-width: 500px) {
             canvas {
-                width: 350px;
-                height: 350px;
+                width: 320px;
+                height: 320px;
             }
             
             h1 {
@@ -110,16 +111,24 @@
             .controls {
                 display: none;
             }
-            
-            .mobile-controls {
-                display: block;
-            }
         }
         
         @media (max-width: 400px) {
             canvas {
-                width: 300px;
-                height: 300px;
+                width: 280px;
+                height: 280px;
+            }
+            
+            .d-pad {
+                grid-template-columns: repeat(3, 70px);
+                grid-template-rows: repeat(3, 70px);
+                gap: 8px;
+            }
+            
+            .d-btn {
+                width: 70px;
+                height: 70px;
+                font-size: 26px;
             }
         }
         
@@ -172,7 +181,7 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>🐍 贪吃蛇</h1>
+        <h1>🍊 橘子大王</h1>
         <div class="score-board">
             得分: <span class="score" id="score">0</span>
         </div>
@@ -217,9 +226,14 @@
         let nextDirection = { x: 0, y: 0 };
         let score = 0;
         let gameLoop = null;
-        let gameSpeed = 100;
+        let gameSpeed = 300; // 速度改为原来的三分之一
         let isGameRunning = false;
         let isPaused = false;
+        let headImage = new Image();
+        headImage.src = 'king.png';
+        
+        // 高中课程数组
+        const courses = ['语文', '数学', '英语', '物理', '化学', '生物', '历史', '地理', '政治'];
 
         // 初始化游戏
         function init() {
@@ -230,7 +244,7 @@
             nextDirection = { x: 0, y: 0 };
             score = 0;
             scoreElement.textContent = score;
-            gameSpeed = 100;
+            gameSpeed = 300; // 速度改为原来的三分之一
             isPaused = false;
             spawnFood();
         }
@@ -239,7 +253,8 @@
         function spawnFood() {
             food = {
                 x: Math.floor(Math.random() * tileCount),
-                y: Math.floor(Math.random() * tileCount)
+                y: Math.floor(Math.random() * tileCount),
+                course: courses[Math.floor(Math.random() * courses.length)]
             };
             
             // 确保食物不在蛇身上
@@ -274,44 +289,25 @@
             // 绘制蛇
             snake.forEach((segment, index) => {
                 if (index === 0) {
-                    // 蛇头
-                    ctx.fillStyle = '#00ff88';
-                    ctx.shadowColor = '#00ff88';
-                    ctx.shadowBlur = 10;
+                    // 蛇头 - 使用图片
+                    ctx.drawImage(
+                        headImage,
+                        segment.x * gridSize,
+                        segment.y * gridSize,
+                        gridSize,
+                        gridSize
+                    );
                 } else {
                     // 蛇身
                     const gradient = 1 - (index / snake.length) * 0.5;
                     ctx.fillStyle = `rgba(0, 255, 136, ${gradient})`;
                     ctx.shadowBlur = 0;
-                }
-                
-                ctx.fillRect(
-                    segment.x * gridSize + 1,
-                    segment.y * gridSize + 1,
-                    gridSize - 2,
-                    gridSize - 2
-                );
-                
-                // 绘制蛇头眼睛
-                if (index === 0) {
-                    ctx.fillStyle = '#0a0a0a';
-                    ctx.shadowBlur = 0;
-                    const eyeSize = 3;
-                    const eyeOffset = 5;
-                    
-                    if (direction.x === 1) { // 向右
-                        ctx.fillRect(segment.x * gridSize + 12, segment.y * gridSize + 5, eyeSize, eyeSize);
-                        ctx.fillRect(segment.x * gridSize + 12, segment.y * gridSize + 12, eyeSize, eyeSize);
-                    } else if (direction.x === -1) { // 向左
-                        ctx.fillRect(segment.x * gridSize + 5, segment.y * gridSize + 5, eyeSize, eyeSize);
-                        ctx.fillRect(segment.x * gridSize + 5, segment.y * gridSize + 12, eyeSize, eyeSize);
-                    } else if (direction.y === -1) { // 向上
-                        ctx.fillRect(segment.x * gridSize + 5, segment.y * gridSize + 5, eyeSize, eyeSize);
-                        ctx.fillRect(segment.x * gridSize + 12, segment.y * gridSize + 5, eyeSize, eyeSize);
-                    } else { // 向下或静止
-                        ctx.fillRect(segment.x * gridSize + 5, segment.y * gridSize + 12, eyeSize, eyeSize);
-                        ctx.fillRect(segment.x * gridSize + 12, segment.y * gridSize + 12, eyeSize, eyeSize);
-                    }
+                    ctx.fillRect(
+                        segment.x * gridSize + 1,
+                        segment.y * gridSize + 1,
+                        gridSize - 2,
+                        gridSize - 2
+                    );
                 }
             });
 
@@ -329,6 +325,17 @@
             );
             ctx.fill();
             ctx.shadowBlur = 0;
+            
+            // 绘制课程名称
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                food.course,
+                food.x * gridSize + gridSize / 2,
+                food.y * gridSize + gridSize / 2
+            );
 
             // 暂停提示
             if (isPaused) {
@@ -379,12 +386,7 @@
                 scoreElement.textContent = score;
                 spawnFood();
                 
-                // 加速
-                if (gameSpeed > 50) {
-                    gameSpeed -= 2;
-                    clearInterval(gameLoop);
-                    gameLoop = setInterval(gameStep, gameSpeed);
-                }
+                // 保持速度不变
             } else {
                 snake.pop();
             }
@@ -461,28 +463,28 @@
         });
 
         // 移动端控制
-        function handleMobileControl(direction) {
+        function handleMobileControl(dir) {
             if (!isGameRunning) return;
             
-            switch(direction) {
+            switch(dir) {
                 case 'up':
-                    if (window.direction.y === 0) {
-                        window.nextDirection = { x: 0, y: -1 };
+                    if (direction.y === 0) {
+                        nextDirection = { x: 0, y: -1 };
                     }
                     break;
                 case 'down':
-                    if (window.direction.y === 0) {
-                        window.nextDirection = { x: 0, y: 1 };
+                    if (direction.y === 0) {
+                        nextDirection = { x: 0, y: 1 };
                     }
                     break;
                 case 'left':
-                    if (window.direction.x === 0) {
-                        window.nextDirection = { x: -1, y: 0 };
+                    if (direction.x === 0) {
+                        nextDirection = { x: -1, y: 0 };
                     }
                     break;
                 case 'right':
-                    if (window.direction.x === 0) {
-                        window.nextDirection = { x: 1, y: 0 };
+                    if (direction.x === 0) {
+                        nextDirection = { x: 1, y: 0 };
                     }
                     break;
             }
