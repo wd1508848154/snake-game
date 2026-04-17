@@ -186,7 +186,7 @@
             分数: <span class="score" id="score">0</span> | 称号: <span class="title" id="title">学渣</span>
         </div>ss
         <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="500" height="500"></canvas>
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
             <div class="game-over" id="gameOver">
                 <h2>游戏结束!</h2>
                 <p>最终得分: <span id="finalScore">0</span></p>
@@ -216,7 +216,7 @@
         const startButton = document.getElementById('startButton');
 
         // 游戏配置
-        const gridSize = 20;
+        const gridSize = 40;
         const tileCount = canvas.width / gridSize;
 
         let snake = [];
@@ -647,7 +647,7 @@
             }
             finalScoreElement.textContent = score;
             gameOverElement.style.display = 'block';
-            startButton.style.display = 'block'; // 显示开始按钮
+            // 不显示开始按钮，只显示游戏结束界面中的重新开始按钮
             playGameOverSound(); // 播放游戏结束音效
         }
 
@@ -678,8 +678,8 @@
                 clearTimeout(foodSpawnTimer);
             }
             
-            // 3-6秒随机生成普通食物
-            const randomTime = Math.floor(Math.random() * 3000) + 3000; // 3000-6000毫秒
+            // 2-4秒随机生成普通食物
+            const randomTime = Math.floor(Math.random() * 2000) + 2000; // 2000-4000毫秒
             
             foodSpawnTimer = setTimeout(() => {
                 if (isGameRunning && !food) {
@@ -696,8 +696,8 @@
                 clearTimeout(specialFoodSpawnTimer);
             }
             
-            // 3-8秒随机生成特殊食物
-            const randomTime = Math.floor(Math.random() * 5000) + 3000; // 3000-8000毫秒
+            // 3-5秒随机生成特殊食物
+            const randomTime = Math.floor(Math.random() * 2000) + 3000; // 3000-5000毫秒
             
             specialFoodSpawnTimer = setTimeout(() => {
                 if (isGameRunning && !specialFood) {
